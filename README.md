@@ -20,7 +20,7 @@ VSRegexX helps you bridge the gap between GUI regex workflows and CLI automation
 
 ## Live Demo
 
-[Try VSRegexX Online](https://A1245967.github.io/vsregexx)
+[Try VSRegexX Online](https://a1245967.github.io/VSRegexX/)
 
 ---
 
