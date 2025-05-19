@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>VSRegexX - Regex to sed/perl Converter</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; max-width: 700px; margin: auto; }
+    input, textarea, button { width: 100%; margin: 0.5em 0; padding: 0.5em; font-size: 1em; }
+    pre { background: #f0f0f0; padding: 1em; white-space: pre-wrap; }
+    label.inline { display: inline-flex; align-items: center; gap: 0.8em; white-space: nowrap; margin: 0.7em 0; }
+  </style>
+</head>
+<body>
+  <h1>VSRegexX 🔁</h1>
+  <p>Convert VSCode-style regex and replace patterns into <code>sed</code> and <code>perl</code> CLI commands.</p>
+
+  <label>Regex Pattern (VSCode style):</label>
+  <input type="text" id="pattern" placeholder="e.g. \\d+">
+
+  <label>Replacement (VSCode style):</label>
+  <input type="text" id="replace" placeholder="e.g. $1_foo">
+
+  <label class="inline"><input type="checkbox" id="inplace"> In-place file editing (with filename)</label>
+
+  <h3>sed Command</h3>
+  <pre id="sedOutput"></pre>
+
+  <h3>perl Command</h3>
+  <pre id="perlOutput"></pre>
+
+  <script>
+    function genSedPattern(pattern, replace, inplace) {
+      const sedPattern = pattern.replace(/\\d/g, '[0-9]');
+      const sedReplace = replace.replace(/\$(\d+)/g, '\\$1');
+      const command = `s/${sedPattern}/${sedReplace}/g`;
+      return inplace ? `sed -i -E '${command}' <filename>` : `sed -E '${command}' <input_file> <output_file>`;
+    }
+
+    function genPerlPattern(pattern, replace, inplace) {
+      const perlReplace = replace.replace(/\$(\d+)/g, '\\$1');
+      const command = `s|${pattern}|${perlReplace}|g`;
+      return inplace ? `perl -pi -e '${command}' <filename>` : `perl -pe '${command}' <input_file> <output_file>`;
+    }
+
+    function convert() {
+      const pattern = document.getElementById('pattern').value;
+      const replace = document.getElementById('replace').value;
+      const inplace = document.getElementById('inplace').checked;
+
+      const sed = genSedPattern(pattern, replace, inplace);
+      const perl = genPerlPattern(pattern, replace, inplace);
+
+      document.getElementById('sedOutput').textContent = sed;
+      document.getElementById('perlOutput').textContent = perl;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('pattern').addEventListener('input', convert);
+      document.getElementById('replace').addEventListener('input', convert);
+      document.getElementById('inplace').addEventListener('change', convert);
+    });
+  </script>
+</body>
+</html>
