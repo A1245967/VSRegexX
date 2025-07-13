@@ -8,6 +8,37 @@
     input, textarea, button { width: 100%; margin: 0.5em 0; padding: 0.5em; font-size: 1em; }
     pre { background: #f0f0f0; padding: 1em; white-space: pre-wrap; }
     label.inline { display: inline-flex; align-items: center; gap: 0.8em; white-space: nowrap; margin: 0.7em 0; }
+    .output-flex {
+      display: flex;
+      align-items: center;
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      margin-top: 0.5em;
+    }
+
+    .output-flex pre {
+      flex-grow: 1;
+      margin: 0;
+      padding: 1em;
+      overflow-x: auto;
+    }
+
+    .copy-button {
+      width: 2em; /* 或 24px, 32px 根據 icon 大小決定 */
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      /* padding: 0 1em; */
+      opacity: 0.6;
+      height: 100%;
+      text-align: center;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -20,44 +51,65 @@
   <label>Replacement (VSCode style):</label>
   <input type="text" id="replace" placeholder="e.g. $1_foo">
 
-  <label class="inline"><input type="checkbox" id="inplace"> In-place file editing (with filename)</label>
+  <h3>Perl Command</h3>
 
-  <h3>sed Command</h3>
-  <pre id="sedOutput"></pre>
+  <div class="output-block">
+    <label for="perlOutput">Command with echo message:</label>
+    <div class="output-flex">
+      <pre id="perlOutput"></pre>
+      <button class="copy-button" onclick="copyOutput('perlOutput', this)">📋</button>
+    </div>
+  </div>
 
-  <h3>perl Command</h3>
-  <pre id="perlOutput"></pre>
+  <div class="output-block">
+    <label for="perlFileOutput">Command for input and output files:</label>
+    <div class="output-flex">
+      <pre id="perlFileOutput"></pre>
+      <button class="copy-button" onclick="copyOutput('perlFileOutput', this)">📋</button>
+    </div>
+  </div>
+
+  <div class="output-block">
+    <label for="perlFileInplaceOutput">Command for inplace file change:</label>
+    <div class="output-flex">
+      <pre id="perlFileInplaceOutput"></pre>
+      <button class="copy-button" onclick="copyOutput('perlFileInplaceOutput', this)">📋</button>
+    </div>
+  </div>
 
   <script>
-    function genSedPattern(pattern, replace, inplace) {
-      const sedPattern = pattern.replace(/\\d/g, '[0-9]');
-      const sedReplace = replace.replace(/\$(\d+)/g, '\\$1');
-      const command = `s/${sedPattern}/${sedReplace}/g`;
-      return inplace ? `sed -i -E '${command}' <filename>` : `sed -E '${command}' <input_file> <output_file>`;
-    }
-
-    function genPerlPattern(pattern, replace, inplace) {
+    function genPerlPattern(pattern, replace) {
       const perlReplace = replace.replace(/\$(\d+)/g, '\\$1');
       const command = `s|${pattern}|${perlReplace}|g`;
-      return inplace ? `perl -pi -e '${command}' <filename>` : `perl -pe '${command}' <input_file> <output_file>`;
+      return command;
+    }
+
+    function copyOutput(id, btn) {
+      var text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.innerText = "✅";
+        setTimeout(() => {
+          btn.innerText = "📋";
+        }, 1500);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
     }
 
     function convert() {
       const pattern = document.getElementById('pattern').value;
       const replace = document.getElementById('replace').value;
-      const inplace = document.getElementById('inplace').checked;
 
-      const sed = genSedPattern(pattern, replace, inplace);
-      const perl = genPerlPattern(pattern, replace, inplace);
+      const command = genPerlPattern(pattern, replace);
 
-      document.getElementById('sedOutput').textContent = sed;
-      document.getElementById('perlOutput').textContent = perl;
+      document.getElementById('perlOutput').textContent = `echo "<message>" | perl -pe '${command}'`;
+      document.getElementById('perlFileOutput').textContent = `perl -pe '${command}' <input_file> > <output_file>`;
+      document.getElementById('perlFileInplaceOutput').textContent = `perl -pi -e '${command}' <filename>`;
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pattern').addEventListener('input', convert);
       document.getElementById('replace').addEventListener('input', convert);
-      document.getElementById('inplace').addEventListener('change', convert);
     });
   </script>
 </body>
